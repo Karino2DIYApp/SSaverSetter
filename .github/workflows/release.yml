@@ -20,9 +20,14 @@ jobs:
         cache: gradle
     
     - name: Decode keystore
+      env:
+        # 直接echoせず、一度環境変数に格納する
+        KEYSTORE_BASE64: ${{ secrets.SIGNING_KEY }}
       run: |
-        echo -n "${{ secrets.SIGNING_KEY }}" | base64 -d --ignore-garbage > ${{ github.workspace }}/release-key.jks
-        # Verify the keystore file was created and is not empty
+        # printf を使い、環境変数から安全に出力してデコード
+        printf "%s" "$KEYSTORE_BASE64" | base64 -d > ${{ github.workspace }}/release-key.jks
+        
+        # 検証コード
         if [ ! -s ${{ github.workspace }}/release-key.jks ]; then
           echo "Error: Keystore file is empty or was not created"
           exit 1
