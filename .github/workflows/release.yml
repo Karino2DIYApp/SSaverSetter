@@ -21,7 +21,7 @@ jobs:
     
     - name: Decode keystore
       run: |
-        echo -n "${{ secrets.SIGNING_KEY }}" | base64 -d > ${{ github.workspace }}/release-key.jks
+        echo -n "${{ secrets.SIGNING_KEY }}" | base64 -d --ignore-garbage > ${{ github.workspace }}/release-key.jks
         # Verify the keystore file was created and is not empty
         if [ ! -s ${{ github.workspace }}/release-key.jks ]; then
           echo "Error: Keystore file is empty or was not created"
