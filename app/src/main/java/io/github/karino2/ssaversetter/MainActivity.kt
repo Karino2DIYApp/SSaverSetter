@@ -6,7 +6,6 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
-import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -16,7 +15,9 @@ import androidx.core.view.WindowInsetsCompat
 import com.onyx.android.sdk.api.device.screensaver.ScreenResourceManager
 import java.io.File
 import java.io.FileOutputStream
-import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,23 +42,11 @@ class MainActivity : AppCompatActivity() {
     // Pictures下にファイルがあるかどうかで判定しているっぽい。
     // このファイルのwrite permissionは無いので違う名前をつけていく。
     // 定期的に手で消してね。
-    // このファイルパスで良いかはデバイス依存かもしれないので、無理そうならデフォルトの名前を返す。
-    private fun findNextFileName() : String {
-        try
-        {
-            val prefix = "/storage/emulated/0/Pictures/SSaverSetter"
-            for(i in 0 until 100) {
-                if(!File("${prefix}-${i}.png").exists())
-                {
-                    return "SSaverSetter-${i}.png"
-                }
-            }
-            println("giveup")
-            return "SSaverSetter.png"
-        }catch(_: IOException) {
-            println("io exception")
-            return "SSaverSetter.png"
-        }
+    // タイムスタンプをsuffixにつけたファイル名にする。1秒以内に二回は呼ばれない前提で秒まで
+    private fun generateNextFileName() : String {
+        val sdf = SimpleDateFormat("yyyyMMddHHmmss", Locale.US)
+        val currentDateTime = sdf.format(Date())
+        return "SSaverSetter-$currentDateTime.png"
     }
 
     private fun handleSendImage(intent: Intent) {
@@ -78,7 +67,7 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
 
-                        val file = File(picturesDir, findNextFileName())
+                        val file = File(picturesDir, generateNextFileName())
 
                         FileOutputStream(file).use { out ->
                             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
@@ -88,9 +77,7 @@ class MainActivity : AppCompatActivity() {
                         val path = file.absolutePath
                         val success = ScreenResourceManager.setScreensaver(this, path, true)
 
-                        if (success) {
-                            Toast.makeText(this, "Screensaver set!", Toast.LENGTH_SHORT).show()
-                        } else {
+                        if (!success) {
                             Toast.makeText(this, "Failed to set screensaver.", Toast.LENGTH_SHORT).show()
                         }
                         finish()
